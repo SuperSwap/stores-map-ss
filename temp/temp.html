@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Filter features within map view</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <style>
+        #map {
+            position: absolute;
+            left: 25%;
+            top: 0;
+            bottom: 0;
+            width: 75%;
+        }
+
+        .map-overlay {
+            position: absolute;
+            width: 25%;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            background-color: #efefef;
+            max-height: 100%;
+            overflow: hidden;
+        }
+
+        .map-overlay fieldset {
+            display: none;
+            background: #ddd;
+            border: none;
+            padding: 10px;
+            margin: 0;
+        }
+
+        .map-overlay input {
+            display: block;
+            border: none;
+            width: 100%;
+            border-radius: 3px;
+            padding: 10px;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        .map-overlay .listing {
+            overflow: auto;
+            max-height: 100%;
+        }
+
+        .map-overlay .listing>* {
+            display: block;
+            padding: 5px 10px;
+            margin: 0;
+        }
+
+        .map-overlay .listing a {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            color: #404;
+            text-decoration: none;
+        }
+
+        .map-overlay .listing a:last-child {
+            border: none;
+        }
+
+        .map-overlay .listing a:hover {
+            background: #f0f0f0;
+        }
+    </style>
+
+    <div id="map"></div>
+
+    <div class="map-overlay">
+        <div id="feature-listing" class="listing"></div>
+    </div>
+
+        <!-- <div class="container-fluid"> -->
+    <!-- <div class="col-3" id="side-panel"></div>
+        <div class="col-3" id="map"></div> -->
+    <!-- <div class="row">
+            <div class="col-3">
+                <ul class="location-list">
+                    
+                </ul>
+            </div>
+            <div class="col-9" id="map"></div>
+        </div> -->
+    <!-- </div> -->
+
+    <!-- https://docs.mapbox.com/mapbox-gl-js/example/filter-features-within-map-view/ -->
+<!-- https://gist.github.com/AlanPew/5acf9fca0fa817104ba3 -->
+
+    <script>
+
+    // mapboxgl.accessToken = 'pk.eyJ1IjoiZWRvbWFkNGN5Y2xpbmciLCJhIjoiY2w4aGt6aWVuMHpwczN3cWhqbnV1YzkwZSJ9.iEh-KHoU2bwjdL2wA-z2oA';
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZWRvbWFkNGN5Y2xpbmciLCJhIjoiY2w4aGt6aWVuMHpwczN3cWhqbnV1YzkwZSJ9.iEh-KHoU2bwjdL2wA-z2oA';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    osm: {
+                        type: 'raster',
+                        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+                        tileSize: 256,
+                        attribution: 'Map tiles by <a target="_top" rel="noopener" href="https://tile.openstreetmap.org/">OpenStreetMap tile servers</a>, under the <a target="_top" rel="noopener" href="https://operations.osmfoundation.org/policies/tiles/">tile usage policy</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>'
+                    }
+                },
+                layers: [{
+                    id: 'osm',
+                    type: 'raster',
+                    source: 'osm',
+                }],
+            }
+        });
+
+        // Holds visible airport features for filtering
+        let airports = [];
+
+        // Create a popup, but don't add it to the map yet.
+        const popup = new mapboxgl.Popup({
+            closeButton: false
+        });
+
+        const listingEl = document.getElementById('feature-listing');
+
+        function renderListings(features) {
+            const empty = document.createElement('p');
+            // Clear any existing listings
+            listingEl.innerHTML = '';
+            if (features.length) {
+                for (const feature of features) {
+                    const itemLink = document.createElement('a');
+                    const label = `${feature.properties.name} (${feature.properties.abbrev})`;
+                    itemLink.href = feature.properties.wikipedia;
+                    itemLink.target = '_blank';
+                    itemLink.textContent = label;
+                    itemLink.addEventListener('mouseover', () => {
+                        // Highlight corresponding feature on the map
+                        popup
+                            .setLngLat(feature.geometry.coordinates)
+                            .setText(label)
+                            .addTo(map);
+                    });
+                    listingEl.appendChild(itemLink);
+                }
+
+            } else {
+                empty.textContent = 'Drag the map to populate results';
+                listingEl.appendChild(empty);
+            }
+        }
+
+        function normalize(string) {
+            return string.trim().toLowerCase();
+        }
+
+        // Because features come from tiled vector data,
+        // feature geometries may be split
+        // or duplicated across tile boundaries.
+        // As a result, features may appear
+        // multiple times in query results.
+        function getUniqueFeatures(features, comparatorProperty) {
+            const uniqueIds = new Set();
+            const uniqueFeatures = [];
+            for (const feature of features) {
+                const id = feature.properties[comparatorProperty];
+                if (!uniqueIds.has(id)) {
+                    uniqueIds.add(id);
+                    uniqueFeatures.push(feature);
+                }
+            }
+            return uniqueFeatures;
+        }
+
+        map.on('load', () => {
+            map.addSource('earthquakes', {
+                type: 'geojson',
+                // Use a URL for the value for the `data` property.
+                data: 'https://docs.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson'
+            });
+            map.addLayer({
+                'id': 'airport',
+                'source': 'airports',
+                'source-layer': 'ne_10m_airports',
+                'type': 'circle',
+                'paint': {
+                    'circle-color': '#4264fb',
+                    'circle-radius': 4,
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#ffffff'
+                }
+            });
+
+
+
+            map.on('moveend', () => {
+                const features = map.queryRenderedFeatures({ layers: ['airport'] });
+
+                if (features) {
+                    const uniqueFeatures = getUniqueFeatures(features, 'iata_code');
+                    // Populate features for the listing overlay.
+                    renderListings(uniqueFeatures);
+
+
+                    // Store the current features in sn `airports` variable to
+                    // later use for filtering on `keyup`.
+                    airports = uniqueFeatures;
+                }
+            });
+
+            map.on('mousemove', 'airport', (e) => {
+                // Change the cursor style as a UI indicator.
+                map.getCanvas().style.cursor = 'pointer';
+
+                // Populate the popup and set its coordinates based on the feature.
+                const feature = e.features[0];
+                popup
+                    .setLngLat(feature.geometry.coordinates)
+                    .setText(
+                        `${feature.properties.name} (${feature.properties.address})`
+                    )
+                    .addTo(map);
+            });
+
+            map.on('mouseleave', 'airport', () => {
+                map.getCanvas().style.cursor = '';
+                popup.remove();
+            });
+
+            renderListings(map.queryRenderedFeatures({ layers: ['airport'] }));
+
+
+        });
+    </script>
+
+</body>
+
+</html>
