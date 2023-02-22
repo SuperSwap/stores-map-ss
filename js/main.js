@@ -95,7 +95,7 @@ function loadMap() {
 
     map.on('load', () => {
         map.loadImage(
-            './icons/pin-48.png',
+            'pin-48.png',
             (error, image) => {
                 if (error) throw error;
 
