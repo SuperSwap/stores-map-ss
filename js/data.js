@@ -11,8 +11,8 @@ var data_features = {
             "type": "Feature",
             "properties": {
                 "id": "pin1",
-                "name": "pin1",
-                "address": "pqr",
+                "name": "Demo company",
+                "address": "aldsjld adjalsd 239489 sdl",
                 "phone": "6779",
                 "email": "a@abc.com"
             },
