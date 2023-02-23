@@ -24,6 +24,8 @@ function loadMap() {
         }
     });
 
+    map.addControl(new mapboxgl.NavigationControl(),'top-right');
+
     // Create a popup, but don't add it to the map yet.
     const popup = new mapboxgl.Popup({
         closeButton: false
