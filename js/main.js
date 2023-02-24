@@ -1,7 +1,7 @@
 var map;
 var previousSelected;
 var initial_load = true
-var programaticZoom = false
+var programaticZoom = 0
 function loadMap() {
 
 
@@ -25,7 +25,7 @@ function loadMap() {
         }
     });
 
-    map.addControl(new mapboxgl.NavigationControl(),'top-right');
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     // Create a popup, but don't add it to the map yet.
     const popup = new mapboxgl.Popup({
@@ -130,9 +130,8 @@ function loadMap() {
 
                 map.on('moveend', () => {
                     console.log("bbb")
-                    if(programaticZoom)
-                    {
-                        programaticZoom=false
+                    if (programaticZoom > 0) {
+                        programaticZoom--;
                         return
                     }
                     const features = map.queryRenderedFeatures({ layers: ['pin'] });
@@ -163,7 +162,6 @@ function loadMap() {
                 map.on('sourcedata', (e) => {
                     if (initial_load && e.dataType == "source" && e.isSourceLoaded && e.sourceId == "locations") {
                         var features = e.source.data.features
-                        console.log(features)
                         if (features.length > 0) {
                             renderListings(features);
                             map.fitBounds(getBoundingBox(data_features), { padding: 100 })
@@ -193,7 +191,6 @@ function loadMap() {
 }
 
 function highlightCell(clickedId) {
-    console.log("Clicked:", clickedId, "PreviousClicked", previousSelected)
     if (previousSelected) {
         var previousNode = document.getElementById("border" + previousSelected);
         if (previousNode) {
@@ -215,17 +212,18 @@ function showOnMapClick(clickedId) {
     zoomToAddressWithoutLoosingList(clickedId)
 }
 
-function zoomToAddressWithoutLoosingList(id){
-    feature=findElementFromData(id);
-    programaticZoom=true
+function zoomToAddressWithoutLoosingList(id) {
+    feature = findElementFromData(id);
+    programaticZoom++
     map.flyTo({
         center: feature[0].geometry.coordinates,
         zoom: 15,
-        speed: 2, 
-     })
+        speed: 2,
+    })
+
 }
 
-function findElementFromData(id){
+function findElementFromData(id) {
     return data_features.features.filter(f => (f.properties.id == id))
 }
 
