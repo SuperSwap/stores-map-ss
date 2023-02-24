@@ -185,7 +185,7 @@ body {
 }
 
 .map-overlay .listing {
-    overflow: auto;
+    overflow-y: scroll;
     max-height: 100%;
 }
 

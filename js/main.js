@@ -1,6 +1,7 @@
 var map;
 var previousSelected;
 var initial_load = true
+var programaticZoom = false
 function loadMap() {
 
 
@@ -128,6 +129,12 @@ function loadMap() {
                 });
 
                 map.on('moveend', () => {
+                    console.log("bbb")
+                    if(programaticZoom)
+                    {
+                        programaticZoom=false
+                        return
+                    }
                     const features = map.queryRenderedFeatures({ layers: ['pin'] });
                     features.push(...map.queryRenderedFeatures({ layers: ['pins-highlighted'] }))
                     if (features) {
@@ -205,6 +212,21 @@ function highlightCell(clickedId) {
 
 function showOnMapClick(clickedId) {
     highlightCell(clickedId)
+    zoomToAddressWithoutLoosingList(clickedId)
+}
+
+function zoomToAddressWithoutLoosingList(id){
+    feature=findElementFromData(id);
+    programaticZoom=true
+    map.flyTo({
+        center: feature[0].geometry.coordinates,
+        zoom: 15,
+        speed: 2, 
+     })
+}
+
+function findElementFromData(id){
+    return data_features.features.filter(f => (f.properties.id == id))
 }
 
 function getBoundingBox(data) {
