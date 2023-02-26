@@ -164,7 +164,12 @@ body {
     }
 }
 
-
+.reset-map {
+    padding: 5px 18px;
+    color: #0488db;
+    font-weight: 400;
+    display: none;
+}
 
 .map-overlay fieldset {
     display: none;

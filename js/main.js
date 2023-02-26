@@ -129,7 +129,6 @@ function loadMap() {
                 });
 
                 map.on('moveend', () => {
-                    console.log("bbb")
                     if (programaticZoom > 0) {
                         programaticZoom--;
                         return
@@ -137,6 +136,11 @@ function loadMap() {
                     const features = map.queryRenderedFeatures({ layers: ['pin'] });
                     features.push(...map.queryRenderedFeatures({ layers: ['pins-highlighted'] }))
                     if (features) {
+                        if (features.length < data_features.features.length) {
+                            document.getElementById("reset-map").style.display = "block"
+                        } else {
+                            document.getElementById("reset-map").style.display = "none"
+                        }
                         renderListings(features);
                     }
                 });
@@ -258,4 +262,8 @@ function addSelectedStyleToItem(id) {
             borderNode?.parentNode.parentNode.scrollIntoView();
         }
     }
+}
+
+function resetMap() {
+    map.fitBounds(getBoundingBox(data_features), { padding: 100 })
 }
